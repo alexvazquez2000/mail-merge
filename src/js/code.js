@@ -1,7 +1,14 @@
 
 /* on a google spreadsheed, go to extensions, then add this code */
 
-//your template ID of the Word Doc -
+/* Author: Alex Vazquez (vazqueza2000@gmail.com)
+
+With help from google respone to "google apps script create document from template"
+and "google apps script read template file append to body"
+
+ */
+
+//the ID of the template Doc - it must be a Google Doc, not MS-Word
 const TEMPLATE_ID = '1mSF1x0R-ysMKCEkbK2fzGaHVe83xshUE457yIDOQZoU';
 //Attendance percentage -  100% is perfect attendance
 const INCLUDE_LESS_THAN = 80
@@ -76,16 +83,44 @@ function createDocumentFromTemplate(data) {
     studentCopy.replaceText('<<Attendance>>', row.percent);
     studentCopy.replaceText('<<Attendance  Days Absent>>', row.days);
     Logger.log("fixed text");
-    for (let i = 0; i < numElements; i++) {
+    for (let i = 0; i < studentCopy.getNumChildren(); i++) {
       const element = studentCopy.getChild(i);
       const elementType = element.getType();
       
+      /*
+      let nextIsSameType = true;
+       while (nextIsSameType && elementType === DocumentApp.ElementType.PARAGRAPH && i < studentCopy.getNumChildren() - 1) {
+         let nextChild = studentCopy.getChild(i+1);
+         let nextChildType = nextChild.getType();
+         if (nextChildType === DocumentApp.ElementType.PARAGRAPH) {
+           let p1 =element.asParagraph();
+           let p2 =nextChild.asParagraph();
+           if (nextChild.getPreviousSibling().getType() === DocumentApp.ElementType.PARAGRAPH ) {
+             //Logger.log("nextChild = " + nextChildType + "vs" + elementType);
+             p2.merge();
+             i++;
+             //Logger.log("merged");
+           } else {
+             nextIsSameType = false;
+           } 
+         } else {
+           nextIsSameType = false;
+         }
+       }
+       */
+
+      //TODO: This is very slow, takes about 6 seconds for each student.
+      //FIXME: The script timesout after 6 minutes, so we can only process about 100 rows.
+      //Option A - split the data in the spreadsheet
+      //Option B - try to imporve the processing
       // Copy elements by type, as you can only copy elements within the same document type
       if (elementType === DocumentApp.ElementType.PARAGRAPH) {
         // Use copy() to create a new instance that can be moved to a different doc
         copyBody.appendParagraph(element.copy());
+        Logger.log("text");
       } else if (elementType === DocumentApp.ElementType.TABLE) {
         copyBody.appendTable(element.copy());
+        Logger.log("table");
       } else if (elementType === DocumentApp.ElementType.LIST_ITEM) {
         copyBody.appendListItem(element.copy());
       } else {
